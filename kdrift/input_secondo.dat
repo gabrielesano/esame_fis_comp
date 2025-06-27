@@ -1,0 +1,6 @@
+10000000 10000 100 1000 100 0.1 14062025 25071994 30 0
+&maxTime_long, &maxTime_ensemble, &intervallini, &N_series, &n_bins, &x0, &seed_ensemble, &seed_long, &max_lag_seconds, interruttore autocor ensemble (1 sì 0 no)
+
+Massimo consigliato 1.E9 di punti per serie ensemble, 1.E11 per serie temp
+maxtimens*intervallini*nseries
+maxtimelong*intervallini

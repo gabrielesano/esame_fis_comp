@@ -1,0 +1,2 @@
+10000000 10000 100 1000 100 0.5 0.5 18062025 19081996 1000 1
+// maxTime_long, maxTime_ensemble, intervallini, N_series, n_bins, x0, alpha, seed_ensemble, seed_long, lag autocorr, ens autocor sì 1 no 0
