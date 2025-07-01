@@ -282,43 +282,43 @@ void log_istogramma(struct Vector * array, int binNum, const char *name) {
     if (counts == NULL) return;
     for (size_t i = 0; i < counts->size; ++i) counts->data[i] = 0;
 
-    size_t total_points_in_hist = 0;
+    size_t punti_totali_istogramma = 0;
     for (size_t i = 0; i < array->size; i++) {
         double val_abs = fabs(array->data[i]);
         if (val_abs > 0) {
             int bin_index = (int)((log(val_abs) - log_min) / log_bin_width);
             if (bin_index >= 0 && bin_index < binNum) {
                 counts->data[bin_index]++;
-                total_points_in_hist++;
+                punti_totali_istogramma++;
             }
         }
     }
-    printf("Controllo Istogramma Log: Conteggi totali = %zu\n", total_points_in_hist);
 
-    char filename[100];
-    snprintf(filename, 100, "log_istogramma_%s.dat", name);
-    FILE *fp = fopen(filename, "w");
-    if (fp == NULL) {
+    char nome_file[100];
+    snprintf(nome_file, 100, "log_istogramma_%s.dat", name);
+    FILE *file = fopen(nome_file, "w");
+    if (file == NULL) {
         delVector(counts);
         return;
     }
 
-    fprintf(fp, "# Centro_Bin_(Geometrico)\tDensita_di_Probabilita\n");
+    fprintf(file, "# CentroBin\tDensitaDiProbabilita\n");
 
     for (int i = 0; i < binNum; i++) {
         if (counts->data[i] > 0) {
-            double bin_edge_low = exp(log_min + i * log_bin_width);
-            double bin_edge_high = exp(log_min + (i + 1.0) * log_bin_width);
-            double bin_width = bin_edge_high - bin_edge_low;
-            double bin_center = sqrt(bin_edge_low * bin_edge_high);
-            double normalized_height = counts->data[i] / ((double)total_points_in_hist * bin_width);
-            fprintf(fp, "%f\t%f\n", bin_center, normalized_height);
+            double limite_inf_lin = exp(log_min + i * log_bin_width);
+            double limite_sup_lin = exp(log_min + (i + 1.0) * log_bin_width);
+            double ampiezza_bin_lin = limite_sup_lin - limite_inf_lin;
+            double centro_bin = sqrt(limite_inf_lin * limite_sup_lin);
+            double valore_normalizzato = counts->data[i] / ((double)punti_totali_istogramma * ampiezza_bin_lin);
+            fprintf(file, "%f\t%f\n", centro_bin, valore_normalizzato);
         }
     }
 
-    fclose(fp);
+    fclose(file);
     delVector(counts);
 }
+
 
 
 // Funzioni ausiliarie

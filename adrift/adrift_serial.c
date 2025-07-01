@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <limits.h>
+#include <float.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -468,73 +469,76 @@ void istogramma_lineare(struct Vector * array, int binNum, const char *name) {
 void istogramma_logaritmico(struct Vector * array, int binNum, const char *name) {
     if (array == NULL || array->size == 0) return;
 
-    double min_pos = -1.0;
+    double min_abs = DBL_MAX;
     double max_abs = 0.0;
     for (size_t i = 0; i < array->size; i++) {
         double val_abs = fabs(array->data[i]);
-        if (val_abs > max_abs) {
-            max_abs = val_abs;
+        if (val_abs > 0) {
+            if (val_abs < min_abs) min_abs = val_abs;
+            if (val_abs > max_abs) max_abs = val_abs;
         }
-        if (val_abs > 1e-9) {
-            if (min_pos < 0 || val_abs < min_pos) {
-                min_pos = val_abs;
+    }
+
+    if (min_abs >= max_abs) {
+        printf("Impossibile creare un istogramma logaritmico: range di dati non valido.\n");
+        return;
+    }
+
+    struct Vector* istogramma_counts = newVector(binNum);
+    if (istogramma_counts == NULL) return;
+    for (size_t i = 0; i < istogramma_counts->size; ++i) istogramma_counts->data[i] = 0;
+
+    double log_min = log(min_abs);
+    double log_max = log(max_abs);
+    double log_bin_size = (log_max - log_min) / binNum;
+
+    size_t punti_totali_istogramma = 0;
+    for (size_t i = 0; i < array->size; i++) {
+        double val_abs = fabs(array->data[i]);
+        if (val_abs > 0) {
+            int bin_index = (int)((log(val_abs) - log_min) / log_bin_size);
+            if (bin_index >= 0 && bin_index < binNum) {
+                istogramma_counts->data[bin_index]++;
+                punti_totali_istogramma++;
             }
         }
     }
 
-    if (min_pos < 0 || (max_abs - min_pos) < 1e-9) {
-        printf("Impossibile generare istogramma\n");
-        return;
-    }
-
-    char * filename = malloc(sizeof(char)*100);
-    if (filename == NULL) return;
-    snprintf(filename, 100, "istogramma_logaritmico_%s.dat", name);
-
-    struct Vector * istogramma_counts = newVector(binNum);
-    if (istogramma_counts == NULL) { free(filename); return; }
-    for(size_t i = 0; i < istogramma_counts->size; ++i) istogramma_counts->data[i] = 0;
-
-    double log_min = log(min_pos);
-    double log_max = log(max_abs);
-    double log_bin_size = (log_max - log_min) / binNum;
-
-    if (log_bin_size <= 0) {
-        printf("Impossibile generare istogramma logaritmico: range non valido.\n");
+    char nome_file[100];
+    snprintf(nome_file, 100, "istogramma_logaritmico_%s.dat", name);
+    FILE *file = fopen(nome_file, "w");
+    if (file == NULL) {
         delVector(istogramma_counts);
-        free(filename);
         return;
     }
 
-    for(size_t i=0; i < array->size; i++) {
-        double val_abs = fabs(array->data[i]);
-        if (val_abs >= min_pos) {
-            int bin = (int)((log(val_abs) - log_min) / log_bin_size);
-            if (bin >= binNum) bin = binNum - 1;
-            if (bin < 0) bin = 0;
-            istogramma_counts->data[bin]++;
+    fprintf(file, "# CentroBin\tDensitaDiProbabilita\n");
+
+    for (int i = 0; i < binNum; i++) {
+        double conteggio = istogramma_counts->data[i];
+
+        if (conteggio > 0) {
+            double log_limite_inf = log_min + i * log_bin_size;
+            double log_limite_sup = log_min + (i + 1.0) * log_bin_size;
+
+            double limite_inf_lin = exp(log_limite_inf);
+            double limite_sup_lin = exp(log_limite_sup);
+
+            double ampiezza_bin_lin = limite_sup_lin - limite_inf_lin;
+            double centro_bin = sqrt(limite_inf_lin * limite_sup_lin);
+
+            double valore_normalizzato = 0.0;
+            if (punti_totali_istogramma > 0 && ampiezza_bin_lin > 0) {
+                valore_normalizzato = conteggio / ((double)punti_totali_istogramma * ampiezza_bin_lin);
+            }
+
+            fprintf(file, "%e\t%e\n", centro_bin, valore_normalizzato);
         }
     }
 
-
-    FILE *fp = fopen(filename, "w");
-    fprintf(fp, "# Centro_Bin_Log\tDensita_di_Probabilita_P(x)\n");
-    for(int i=0; i < binNum; i++) {
-        double bin_edge_low = exp(log_min + i * log_bin_size);
-        double bin_edge_high = exp(log_min + (i + 1) * log_bin_size);
-        double bin_width = bin_edge_high - bin_edge_low;
-        double bin_center = (bin_edge_low + bin_edge_high) / 2.0;
-
-        double normalized_height = 0.0;
-        if (bin_width > 0 && array->size > 0) {
-            normalized_height = 0.5 * (istogramma_counts->data[i] / (double)array->size) / bin_width;
-        }
-
-        fprintf(fp, "%f\t%f\n", bin_center, normalized_height);
-    }
-    fclose(fp);
-    free(filename);
+    fclose(file);
     delVector(istogramma_counts);
+    printf("Istogramma normalizzato salvato in %s\n", nome_file);
 }
 
 
