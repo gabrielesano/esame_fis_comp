@@ -11,7 +11,7 @@ serie temporali più lunghe di 10^11 punti (max_temp*intervallini per le serie t
 (i valori adatti potrebbero richiedere un minuto di fine tuning)
 
 NB: per la parallelizzazione il codice impiega ~1gb di ram per processore per un tempo fisico di 
-10^6 con 100dt, per 1024 serie dovrebbe completare il processo in 14min su 8 processori.
+10^6 con 100dt, per 1024 serie il processo è portato a termine in 14 minuti su CPU 8 core AMD Ryzen 7 7735HS in "performance mode".
 Compilato con openMPI 5.0.6.
 
 Gabriele Sano
